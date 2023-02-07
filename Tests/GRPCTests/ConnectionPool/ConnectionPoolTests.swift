@@ -27,6 +27,7 @@ final class ConnectionPoolTests: GRPCTestCase {
 
   private var eventLoop: EmbeddedEventLoop!
   private var tearDownBlocks: [() throws -> Void] = []
+  private var hookedStreamLenders: [HookedStreamLender] = []
 
   override func setUp() {
     super.setUp()
@@ -36,6 +37,7 @@ final class ConnectionPoolTests: GRPCTestCase {
   override func tearDown() {
     XCTAssertNoThrow(try self.eventLoop.close())
     self.tearDownBlocks.forEach { try? $0() }
+    hookedStreamLenders.removeAll()
     super.tearDown()
   }
 
@@ -58,6 +60,11 @@ final class ConnectionPoolTests: GRPCTestCase {
     onMaximumReservationsChange: @escaping (Int) -> Void = { _ in },
     channelProvider: ConnectionManagerChannelProvider
   ) -> ConnectionPool {
+    let streamLender = HookedStreamLender(
+      onReturnStreams: onReservationReturned,
+      onUpdateMaxAvailableStreams: onMaximumReservationsChange
+    )
+    hookedStreamLenders.append(streamLender)
     return ConnectionPool(
       eventLoop: self.eventLoop,
       maxWaiters: waiters,
@@ -65,10 +72,7 @@ final class ConnectionPoolTests: GRPCTestCase {
       assumedMaxConcurrentStreams: 100,
       connectionBackoff: connectionBackoff,
       channelProvider: channelProvider,
-      streamLender: HookedStreamLender(
-        onReturnStreams: onReservationReturned,
-        onUpdateMaxAvailableStreams: onMaximumReservationsChange
-      ),
+      streamLender: streamLender,
       delegate: delegate,
       logger: self.logger.wrapped,
       now: now
@@ -1157,9 +1161,15 @@ extension ChannelController: ConnectionManagerChannelProvider {
   }
 }
 
-internal struct HookedStreamLender: StreamLender {
+internal final class HookedStreamLender: StreamLender {
+
   internal var onReturnStreams: (Int) -> Void
   internal var onUpdateMaxAvailableStreams: (Int) -> Void
+    
+  internal init(onReturnStreams: @escaping (Int) -> Void, onUpdateMaxAvailableStreams: @escaping (Int) -> Void) {
+    self.onReturnStreams = onReturnStreams
+    self.onUpdateMaxAvailableStreams = onUpdateMaxAvailableStreams
+  }
 
   internal func returnStreams(_ count: Int, to pool: ConnectionPool) {
     self.onReturnStreams(count)

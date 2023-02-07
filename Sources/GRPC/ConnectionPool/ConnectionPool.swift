@@ -96,7 +96,7 @@ internal final class ConnectionPool {
   /// The object to notify about changes to stream reservations; in practice this is usually
   /// the `PoolManager`.
   @usableFromInline
-  internal let streamLender: StreamLender
+  internal weak var streamLender: StreamLender?
 
   @usableFromInline
   internal var delegate: GRPCConnectionPoolDelegate?
@@ -650,7 +650,7 @@ extension ConnectionPool: ConnectionManagerConnectivityDelegate {
     //
     // Note: we don't need to adjust the number of available streams as the effective number of
     // connections hasn't changed.
-    self.streamLender.returnStreams(reservedStreams, to: self)
+    self.streamLender?.returnStreams(reservedStreams, to: self)
   }
 
   private func updateMostRecentError(_ error: Error) {
@@ -666,7 +666,7 @@ extension ConnectionPool: ConnectionManagerConnectivityDelegate {
     // The connection is no longer available: any streams which haven't been closed will be counted
     // as a dropped reservation, we need to tell the pool manager about them.
     if let droppedReservations = self._connections[id]?.unavailable(), droppedReservations > 0 {
-      self.streamLender.returnStreams(droppedReservations, to: self)
+      self.streamLender?.returnStreams(droppedReservations, to: self)
     }
   }
 }
@@ -704,7 +704,7 @@ extension ConnectionPool: ConnectionManagerHTTP2Delegate {
     // Don't return the stream to the pool manager if the connection is quescing, they were returned
     // when the connection started quiescing.
     if !self._connections.values[index].isQuiescing {
-      self.streamLender.returnStreams(1, to: self)
+      self.streamLender?.returnStreams(1, to: self)
 
       // A stream was returned: we may be able to service a waiter now.
       self.tryServiceWaiters()
@@ -747,7 +747,7 @@ extension ConnectionPool: ConnectionManagerHTTP2Delegate {
     }
 
     if delta != 0 {
-      self.streamLender.changeStreamCapacity(by: delta, for: self)
+      self.streamLender?.changeStreamCapacity(by: delta, for: self)
     }
 
     // We always check, even if `delta` isn't greater than zero as this might be a new connection.

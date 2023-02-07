@@ -15,7 +15,7 @@
  */
 
 @usableFromInline
-internal protocol StreamLender {
+internal protocol StreamLender: AnyObject {
   /// `count` streams are being returned to the given `pool`.
   func returnStreams(_ count: Int, to pool: ConnectionPool)
 
