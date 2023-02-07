@@ -269,10 +269,10 @@ internal final class ConnectionManager {
   internal let eventLoop: EventLoop
 
   /// A delegate for connectivity changes. Executed on the `EventLoop`.
-  private var connectivityDelegate: ConnectionManagerConnectivityDelegate?
+  private weak var connectivityDelegate: ConnectionManagerConnectivityDelegate?
 
   /// A delegate for HTTP/2 connection changes. Executed on the `EventLoop`.
-  private var http2Delegate: ConnectionManagerHTTP2Delegate?
+  private weak var http2Delegate: ConnectionManagerHTTP2Delegate?
 
   /// An `EventLoopFuture<Channel>` provider.
   private let channelProvider: ConnectionManagerChannelProvider

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-internal protocol ConnectionManagerConnectivityDelegate {
+internal protocol ConnectionManagerConnectivityDelegate: AnyObject {
   /// The state of the connection changed.
   ///
   /// - Parameters:
@@ -34,7 +34,7 @@ internal protocol ConnectionManagerConnectivityDelegate {
   func connectionIsQuiescing(_ connectionManager: ConnectionManager)
 }
 
-internal protocol ConnectionManagerHTTP2Delegate {
+internal protocol ConnectionManagerHTTP2Delegate: AnyObject {
   /// An HTTP/2 stream was opened.
   ///
   /// - Parameters:
