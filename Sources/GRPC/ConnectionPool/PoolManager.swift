@@ -150,13 +150,12 @@ internal final class PoolManager {
   }
 
   deinit {
-    self.shutdown(mode: .forceful, promise: group.next().makePromise())
-//    self.lock.withLock {
-//      assert(
-//        self._state.isShutdownOrShuttingDown,
-//        "The pool manager (\(ObjectIdentifier(self))) must be shutdown before going out of scope."
-//      )
-//    }
+    self.lock.withLock {
+      assert(
+        self._state.isShutdownOrShuttingDown,
+        "The pool manager (\(ObjectIdentifier(self))) must be shutdown before going out of scope."
+      )
+    }
   }
 
   /// Initialize the pool manager, create and initialize one connection pool per event loop in the
